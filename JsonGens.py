@@ -45,4 +45,6 @@ def pairsList():
     json.dump(out, open(out_path,'w'), indent=4,ensure_ascii=False)
 
 if __name__ == "__main__":
+    namelist()
+    pairsList()
     pass
