@@ -5,12 +5,8 @@ import torch.nn as nn
 import torchvision as tv
 import torchvision.models as models
 
-class LinearLayer(nn.Module):
-    def __init__(self):
-        super(LinearLayers,self).__init__()
+from collections import namedtuple, OrderedDict
 
-    def forward(self,x):
-        pass
 
 class VGGEmbNet(nn.Module):
     def __init__(self):
@@ -35,6 +31,7 @@ class VGGEmbNet(nn.Module):
             self.slice5.add_module(str(x), self.preNet[x])
         for param in self.preNet.parameters():
             param.requires_grad = False
+
         self.finalClassifier = nn.Sequential()
 
     def forward(self, X):
@@ -55,6 +52,26 @@ class VGGEmbNet(nn.Module):
 class AlexEmbNet(nn.Module):
     def __init__(self):
         super(AlexEmbNet,self).__init__()
+        self.preNet = models.alexnet(True).features
+        self.alex = nn.Sequential()
+        self.slice1 = nn.Sequential()
+        self.slice2 = nn.Sequential()
+        self.slice3 = nn.Sequential()
+        self.slice4 = nn.Sequential()
+        self.slice5 = nn.Sequential()
+        self.NSlices = 5
+        for x in range(3):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(3,6):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(6,8):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(8,10):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(10,13):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for param in self.preNet.parameters():
+            param.requires_grad = False
 
     def forward(self,x):
         pass
@@ -62,17 +79,29 @@ class AlexEmbNet(nn.Module):
 class SQEEmbNet(nn.Module):
     def __init__(self):
         super(SQEEmbNet,self).__init__()
-        self.sqeNet = models.squeezenet1_1(pretrained=True)
+        self.preNet = models.squeezenet1_1(pretrained=True).features
+        self.sqe = nn.Sequential()
+        self.slice1 = nn.Sequential()
+        self.slice2 = nn.Sequential()
+        self.slice3 = nn.Sequential()
+        self.slice4 = nn.Sequential()
+        self.slice5 = nn.Sequential()
+        self.NSlices = 5
+        for x in range(3):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(3,6):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(6,9):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(9,11):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for x in range(11,13):
+            self.slice1.add_module(str(x),self.preNet[x])
+        for param in self.preNet.parameters():
+            param.requires_grad = False
+
     def forward(self,x):
         pass
-
-# class MobilenetEmbNet(nn.Module):
-#     def __init__(self):
-#         super(MobilenetEmbNet,self).__init__()
-#         self.mobileNet = torch.hub.load('pytorch/vision:v0.6.0', 'mobilenet_v2', pretrained=True)
-#         self.transform = None
-#     def forward(self,x):
-#         pass
 
 class ResnetEmbNet(nn.Module):
     def __init__(self):
@@ -89,18 +118,30 @@ class ResnetEmbNet(nn.Module):
         self.layer4 = self.resnet.layer4
         for param in self.resnet.parameters():
             param.requires_grad = False
-        self.endClassifier = nn.Sequential()
+        self.finalClassifier = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(100352, 512,True),
+            nn.ReLU(),
+            nn.Linear(512, 256,True),
+            nn.ReLU(),
+            nn.Linear(256, 128,True),
+            nn.ReLU(),
+            nn.Linear(128, 32,True),
+        )
 
     def forward(self,x):
-        pass
+        h = self.conv1(x)
+        h = self.bn1(h)
+        h = self.relu(h)
+        h = self.maxpool(h)
+        h = self.layer1(h)
+        h = self.layer2(h)
+        h = self.layer3(h)
+        h = self.layer4(h)
+        h_flat = h.reshape(-1,2048*7*7)
+        out = self.finalClassifier(h_flat)
+        return out.sum(1)
 
-
-class SENETEmbNet(nn.Module):
-    def __init__(self):
-        super(SENETEmbNet,self).__init__()
-
-    def forward(self,x):
-        pass
 
 class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
