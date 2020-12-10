@@ -7,7 +7,6 @@ import torchvision.models as models
 
 from collections import namedtuple, OrderedDict
 
-
 class VGGEmbNet(nn.Module):
     def __init__(self):
         super(VGGEmbNet,self).__init__()
@@ -31,8 +30,7 @@ class VGGEmbNet(nn.Module):
             self.slice5.add_module(str(x), self.preNet[x])
         for param in self.preNet.parameters():
             param.requires_grad = False
-
-        self.finalClassifier = nn.Sequential()
+        self.Final_FC = nn.Sequential()
 
     def forward(self, X):
         h = self.slice1(X)
@@ -50,64 +48,134 @@ class VGGEmbNet(nn.Module):
         return out
 
 class AlexEmbNet(nn.Module):
-    def __init__(self):
+    def __init__(self, lpips_like = False):
         super(AlexEmbNet,self).__init__()
         self.preNet = models.alexnet(True).features
+
+        #lpips like = False
         self.alex = nn.Sequential()
-        self.slice1 = nn.Sequential()
-        self.slice2 = nn.Sequential()
-        self.slice3 = nn.Sequential()
-        self.slice4 = nn.Sequential()
-        self.slice5 = nn.Sequential()
-        self.NSlices = 5
-        for x in range(3):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(3,6):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(6,8):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(8,10):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(10,13):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for param in self.preNet.parameters():
+        for x in range(13):
+            self.alex.add_module(str(x), self.preNet[x])
+        for param in self.alex.parameters():
             param.requires_grad = False
 
+        #lpips like = True
+        # self.slice1 = nn.Sequential()
+        # self.slice2 = nn.Sequential()
+        # self.slice3 = nn.Sequential()
+        # self.slice4 = nn.Sequential()
+        # self.slice5 = nn.Sequential()
+        # self.NSlices = 5
+        # for x in range(3):
+        #     self.slice1.add_module(str(x),self.preNet[x])
+        # for x in range(3,6):
+        #     self.slice1.add_module(str(x),self.preNet[x])
+        # for x in range(6,8):
+        #     self.slice1.add_module(str(x),self.preNet[x])
+        # for x in range(8,10):
+        #     self.slice1.add_module(str(x),self.preNet[x])
+        # for x in range(10,13):
+        #     self.slice1.add_module(str(x),self.preNet[x])
+        # for param in self.preNet.parameters():
+        #     param.requires_grad = False
+        # self.Final_FC = nn.Sequential()
+
+        self.conv_block = nn.Sequential(
+            nn.Dropout(0.25),
+            nn.Conv2d(256,256,1,1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d(1),
+            )
+        self.Final_FC = nn.Sequential(
+            nn.Linear(256,128),
+            nn.ReLU(),
+            nn.Linear(128,64),
+            nn.ReLU(),
+            nn.Linear(64,32),
+        )
+
     def forward(self,x):
-        pass
+        h = self.alex(x)
+        h = self.conv_block(h)
+        h = h.reshape(-1,256)
+        h_out = self.Final_FC(h)
+        return h_out
+
 
 class SQEEmbNet(nn.Module):
     def __init__(self):
         super(SQEEmbNet,self).__init__()
         self.preNet = models.squeezenet1_1(pretrained=True).features
+
+        # lpips like = False
         self.sqe = nn.Sequential()
-        self.slice1 = nn.Sequential()
-        self.slice2 = nn.Sequential()
-        self.slice3 = nn.Sequential()
-        self.slice4 = nn.Sequential()
-        self.slice5 = nn.Sequential()
-        self.NSlices = 5
-        for x in range(3):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(3,6):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(6,9):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(9,11):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for x in range(11,13):
-            self.slice1.add_module(str(x),self.preNet[x])
-        for param in self.preNet.parameters():
+        for x in range(13):
+            self.sqe.add_module(str(x), self.preNet[x])
+        for param in self.sqe.parameters():
             param.requires_grad = False
 
+        #lpips like = True
+        # self.slice1 = nn.Sequential()
+        # self.slice2 = nn.Sequential()
+        # self.slice3 = nn.Sequential()
+        # self.slice4 = nn.Sequential()
+        # self.slice5 = nn.Sequential()
+        # self.slice6 = nn.Sequential()
+        # self.slice7 = nn.Sequential()
+        # self.NSlices = 5
+        # for x in range(2):
+        #     self.slice1.add_module(str(x), self.preNet[x])
+        # for x in range(2,5):
+        #     self.slice2.add_module(str(x), self.preNet[x])
+        # for x in range(5, 8):
+        #     self.slice3.add_module(str(x), self.preNet[x])
+        # for x in range(8, 10):
+        #     self.slice4.add_module(str(x), self.preNet[x])
+        # for x in range(10, 11):
+        #     self.slice5.add_module(str(x), self.preNet[x])
+        # for x in range(11, 12):
+        #     self.slice6.add_module(str(x), self.preNet[x])
+        # for x in range(12, 13):
+        #     self.slice7.add_module(str(x), self.preNet[x])
+        # for param in self.preNet.parameters():
+        #     param.requires_grad = False
+        self.conv_block = nn.Sequential(
+            nn.Dropout(0.25),
+            nn.Conv2d(512,512,1,1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d(1),
+            )
+        self.Final_FC = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256,128),
+            nn.ReLU(),
+            nn.Linear(128,64),
+            nn.ReLU(),
+            nn.Linear(64,32),
+        )
+
     def forward(self,x):
-        pass
+        # lpips like = True
+        # h = self.slice1(x)
+        # h = self.slice2(h)
+        # h = self.slice3(h)
+        # h = self.slice4(h)
+        # h = self.slice5(h)
+        # h = self.slice6(h)
+        # h = self.slice7(h)
+
+        #lpips like False
+        h = self.sqe(x)
+        h_conv = self.conv_block(h)
+        h_conv = h_conv.reshape(-1,512)
+        out = self.Final_FC(h_conv)
+        return out
 
 class ResnetEmbNet(nn.Module):
     def __init__(self):
         super(ResnetEmbNet,self).__init__()
         self.resnet = models.resnet50(pretrained=True)
-        self.NSlices = 5
         self.conv1 = self.resnet.conv1
         self.bn1 = self.resnet.bn1
         self.relu = self.resnet.relu
@@ -118,17 +186,23 @@ class ResnetEmbNet(nn.Module):
         self.layer4 = self.resnet.layer4
         for param in self.resnet.parameters():
             param.requires_grad = False
-        self.finalClassifier = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(100352, 512,True),
+        self.conv_block = nn.Sequential(
+            nn.Dropout(0.25),
+            nn.Conv2d(2048,1024,1,1),
             nn.ReLU(),
-            nn.Linear(512, 256,True),
+            nn.AdaptiveAvgPool2d(1),
+            )
+        self.Final_FC = nn.Sequential(
+            nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.Linear(256, 128,True),
+            nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(128, 32,True),
+            nn.Linear(256,128),
+            nn.ReLU(),
+            nn.Linear(128,64),
+            nn.ReLU(),
+            nn.Linear(64,32),
         )
-
     def forward(self,x):
         h = self.conv1(x)
         h = self.bn1(h)
@@ -138,10 +212,12 @@ class ResnetEmbNet(nn.Module):
         h = self.layer2(h)
         h = self.layer3(h)
         h = self.layer4(h)
-        h_flat = h.reshape(-1,2048*7*7)
-        out = self.finalClassifier(h_flat)
-        return out.sum(1)
-
+        h = self.conv_block(h)
+        h = h.reshape(-1, 1024)
+        h_out = self.Final_FC(h)
+        # h_flat = h.reshape(-1,2048*7*7)
+        # out = self.finalClassifier(h_flat)
+        return h_out
 
 class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
@@ -154,7 +230,7 @@ class SiameseNet(nn.Module):
         return out1, out2
 
 class TripletNet(nn.Module):
-    def __init__(self):
+    def __init__(self, embedding_net):
         super(TripletNet,self).__init__()
         self.embedding_net = embedding_net
 

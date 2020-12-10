@@ -1,19 +1,33 @@
-### CODE Structure
+### Experiment Types/Approaches
+- Final Conv and FC classification Layers (learnable) with Siamese and Triplet Architectures.
+- LPIPS like *Next Step*
+- Concating LPIPS_like features extracted from [low, mid and higher] layers with Final Classifier *Next Step*
+
+### modules Structure
 - network
-    - VGGEmbNet
     - AlexEmbNet
     - ResnetEmbNet
     - SQEEmbNet
     - SiameseNet
     - TripletNet
-- Linear_Layers
 - custom datasets
+    - SiamDset
+    - TripDset
 - losses
-- metrics
+    - Constrastive Loss
+    - Triplet Loss
 - train
-    -main (testing with resenet to see is all the weights updating thruough the training)
+    -main
         epoch 
         train
         test
         
+
+### Hyperparameters
+- Learning Rate = [.01, .001, .0001]
+- Batch Size = [10, 25, 100]
+- Architecture Type = ['siameseNet', 'tripletNet']
+- Embedding Nets = ['sqe','alex', 'resnet']
+- ~lpips_like = [True, False] *Next Step*
+- Contrastive and Triplet Losses Margin = [0.5, 1., 1.5]
 

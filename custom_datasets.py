@@ -65,9 +65,9 @@ class siameseDataset(Dataset):
         img2 = self.transform(img2)
 
         if img1_lbl == img2_lbl:
-            target = 0
-        else:
             target = 1
+        else:
+            target = 0
         return (img1, img2), target
 
 class tripletDataset(Dataset):
