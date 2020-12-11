@@ -1,0 +1,4 @@
+2020-12-11 22:39:45,028:INFO:Run(model='siameseNet', network='sqe', lr=0.01, batch_size=200, test_shuffle=True, margin=0.5)
+ Run Data: OrderedDict([('run', 1), ('epoch', 1), ('train loss', 1.6171581745147705), ('test loss', 0.053672753274440765), ('epoch duration', 145.5876190662384), ('run duration', 145.59456610679626), ('model', 'siameseNet'), ('network', 'sqe'), ('lr', 0.01), ('batch_size', 200), ('test_shuffle', True), ('margin', 0.5)])
+2020-12-11 22:46:07,385:INFO:Run(model='siameseNet', network='resnet', lr=0.01, batch_size=200, test_shuffle=True, margin=0.5)
+ Run Data: OrderedDict([('run', 1), ('epoch', 1), ('train loss', 7.060086727142334), ('test loss', 0.14752429723739624), ('epoch duration', 301.72470927238464), ('run duration', 301.7316918373108), ('model', 'siameseNet'), ('network', 'resnet'), ('lr', 0.01), ('batch_size', 200), ('test_shuffle', True), ('margin', 0.5)])

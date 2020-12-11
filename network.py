@@ -47,8 +47,14 @@ class VGGEmbNet(nn.Module):
         out = vgg_outputs(h_relu1_2, h_relu2_2, h_relu3_3, h_relu4_3, h_relu5_3)
         return out
 
+# class ResNextEmbNet(nn.Module):
+#     def __init__(self):
+#         super(ResNextEmbNet, self).__init__()
+#         self.preNet = models.resnext50_32x4d(True)
+#         self.resNext = nn.Sequential()
+
 class AlexEmbNet(nn.Module):
-    def __init__(self, lpips_like = False):
+    def __init__(self):
         super(AlexEmbNet,self).__init__()
         self.preNet = models.alexnet(True).features
 
