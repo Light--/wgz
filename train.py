@@ -16,7 +16,6 @@ import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
 
-
 import numpy as np
 
 from custom_datasets import siameseDataset,tripletDataset, datasetGen
@@ -36,18 +35,16 @@ from losses import ContrastiveLoss, TripletLoss
 logs_filename = 'results.log'
 logging.basicConfig(filename=logs_filename, level= logging.DEBUG,
                     format='%(asctime)s:%(levelname)s:%(message)s')
+##########################################################################################
+#Tensorboard runs hosted here : https://tensorboard.dev/experiment/XaWjqJX0Sgamt37dAsrTMg
+##########################################################################################
 
 params = OrderedDict(
-    model = ['siameseNet', 'tripletNet'],
-    network = ['sqe','alex','resnet'],
-    lr = [.01, .001, .0001],
-    if model == 'siameseNet':
-        batch_size = [100, 150, 200],
-    elif model == 'tripletNet':
-        batch_size = [12,24,36],
+    batch_size = [5,10,15,20,25],
+    network = ['resnet', 'alex', 'sqe'],
+    model = ['tripletNet','siameseNet'],
+    lr = [.1, .01],
     # lpips_like = [True, False], ####### NEXT STEP ######
-    test_shuffle = [True, False],
-    margin = [0.5, 1., 1.5]
 )
 
 class RunBuilder():
@@ -74,12 +71,13 @@ class RunManager():
         self.network = None
         self.tb = None
 
-    def begin_run(self, run):
+    def begin_run(self, run, embedding_net):
         self.run_start_time = time.time()
 
         self.run_params = run
         self.run_number += 1
 
+        self.network = embedding_net
         self.tb = SummaryWriter(comment=f'-{run}')
     
     def end_run(self):
@@ -103,6 +101,11 @@ class RunManager():
         self.tb.add_scalar('Train Loss:', trainLoss, self.epoch_number)
         self.tb.add_scalar('Test Loss:', testLoss, self.epoch_number)
 
+        for name, param in self.network.conv_block.named_parameters():
+            self.tb.add_histogram(name, param, self.epoch_number)
+        for name, param in self.network.Final_FC.named_parameters():
+            self.tb.add_histogram(name, param, self.epoch_number)
+
         results = OrderedDict()
         results['run'] = self.run_number
         results['epoch'] = self.epoch_number
@@ -115,11 +118,12 @@ class RunManager():
 
         message = f"{self.run_params}\n Run Data: {results}"
         logging.info(message)
-    def track_trainLoss(self, trainLoss):
-        self.epoch_trainLoss = trainLoss # edittable
 
-    def track_testLoss(self, testLoss):
-        self.epoch_testLoss = testLoss # edittable
+    def track_trainLoss(self, train_Loss):
+        self.epoch_trainLoss = train_Loss # edittable
+
+    def track_testLoss(self, test_Loss):
+        self.epoch_testLoss = test_Loss # edittable
 
     def save_model(self):
         pass
@@ -127,11 +131,6 @@ class RunManager():
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main():
-    # logs_filename = 'results.log'
-    # logging.basicConfig(filename=logs_filename, level= logging.DEBUG,
-    #                     format='%(asctime)s:%(levelname)s:%(message)s')
-    # tb = SummaryWriter(logs_filename)
-
     m = RunManager()
     for run in RunBuilder.get_runs(params):
         if run.network == 'sqe':
@@ -145,36 +144,42 @@ def main():
         if run.model == 'siameseNet':
             model = SiameseNet(embedding_net)
             Dset = siameseDataset()
-            train_set, test_set = torch.utils.data.random_split(Dset,[10000,3203])
+            train_set, test_set = torch.utils.data.random_split(Dset,[100,63])
+            trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
+            testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle = True)
         elif run.model == 'tripletNet':
             model = TripletNet(embedding_net)
             Dset = tripletDataset()
             train_set, test_set = torch.utils.data.random_split(Dset,[120,43])
+            trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
+            testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle = True)
         model = model.to(device)
-        trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
-        testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle = run.test_shuffle)
-        m.begin_run(run)
+        m.begin_run(run, embedding_net)
         def train_epoch(trainLoader):
-            embedding_net.train()
+            model.train()
             train_loss = 0
-            optimizer = optim.Adam(model.parameters(),run.lr)
+            optimizer = optim.SGD([
+                # {'params':model.embedding_net.parameters()},
+                {'params':model.embedding_net.conv_block.parameters(),'lr':run.lr},
+                {'params':model.embedding_net.Final_FC.parameters(),'lr':run.lr * 0.01}], lr= run.lr, momentum=0.9, weight_decay=0.0001)
             for batch_idx, data in enumerate(trainLoader):
                 img1 = data[0][0].to(device)
                 img2 = data[0][1].to(device)
                 if run.model == 'siameseNet':
                     target = data[1].to(device)
                     preds = model(img1,img2)
-                    constLoss = ContrastiveLoss(run.margin)
+                    constLoss = ContrastiveLoss(1.)
                     loss_output = constLoss(preds[0],preds[1],target)
                 elif run.model == 'tripletNet':
                     img3 = data[0][2].to(device)
                     preds = model(img1,img2,img3)
-                    tripLoss = TripletLoss(run.margin)
+                    tripLoss = TripletLoss(1.)
                     loss_output = tripLoss(preds[0],preds[1],preds[2])
                 train_loss += loss_output
                 optimizer.zero_grad()
                 loss_output.backward()
                 optimizer.step()
+            train_loss /= (batch_idx+1)
             return train_loss
         def test_epoch(testLoader):
             with torch.no_grad():
@@ -186,27 +191,23 @@ def main():
                     if run.model == 'siameseNet':
                         target = data[1].to(device)
                         preds = model(img1,img2)
-                        constLoss = ContrastiveLoss(run.margin)
+                        constLoss = ContrastiveLoss(1.)
                         loss_output = constLoss(preds[0],preds[1],target)
                     elif run.model == 'tripletNet':
                         img3 = data[0][2].to(device)
                         preds = model(img1,img2,img3)
-                        tripLoss = TripletLoss(run.margin)
+                        tripLoss = TripletLoss(1.)
                         loss_output = tripLoss(preds[0],preds[1],preds[2])
                     test_loss += loss_output
+                test_loss /= (batch_idx+1)
                 return test_loss
-        for epoch in range(5):
+        for epoch in range(20):
             m.begin_epoch()
             train_loss = train_epoch(trainLoader)
             test_loss = test_epoch(testLoader)
             m.track_trainLoss(train_loss)
             m.track_testLoss(test_loss)
-            # message = 'Epoch: {}/{}, Train Loss: {:.4f}'.format(epoch+1,N_epoch,train_loss)
-            # message += '\nEpoch: {}/{}, Test Loss: {:.4f}'.format(epoch+1,N_epoch,val_loss)
-            # message += '\nEpoch: {}/{}, Duration: {:.4f}'.format(epoch+1, N_epoch, epoch_end)
-            # logging.info(message)
             m.end_epoch()
-            # m.save_log(run)
         m.end_run()
 
 if __name__ == "__main__":

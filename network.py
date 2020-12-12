@@ -190,7 +190,15 @@ class ResnetEmbNet(nn.Module):
         self.layer2 = self.resnet.layer2
         self.layer3 = self.resnet.layer3
         self.layer4 = self.resnet.layer4
-        for param in self.resnet.parameters():
+        for param in self.conv1.parameters():
+            param.requires_grad = False
+        for param in self.layer1.parameters():
+            param.requires_grad = False
+        for param in self.layer2.parameters():
+            param.requires_grad = False
+        for param in self.layer3.parameters():
+            param.requires_grad = False
+        for param in self.layer4.parameters():
             param.requires_grad = False
         self.conv_block = nn.Sequential(
             nn.Dropout(0.25),
@@ -199,9 +207,7 @@ class ResnetEmbNet(nn.Module):
             nn.AdaptiveAvgPool2d(1),
             )
         self.Final_FC = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
+            nn.Linear(1024, 256),
             nn.ReLU(),
             nn.Linear(256,128),
             nn.ReLU(),
@@ -219,10 +225,8 @@ class ResnetEmbNet(nn.Module):
         h = self.layer3(h)
         h = self.layer4(h)
         h = self.conv_block(h)
-        h = h.reshape(-1, 1024)
-        h_out = self.Final_FC(h)
-        # h_flat = h.reshape(-1,2048*7*7)
-        # out = self.finalClassifier(h_flat)
+        h_flat = h.reshape(-1, 1024)
+        h_out = self.Final_FC(h_flat)
         return h_out
 
 class SiameseNet(nn.Module):
@@ -244,5 +248,5 @@ class TripletNet(nn.Module):
         out1 = self.embedding_net(x1)
         out2 = self.embedding_net(x2)
         out3 = self.embedding_net(x3)
-        return x1, x2, x3
+        return out1, out2, out3
 
