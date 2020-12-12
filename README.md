@@ -1,5 +1,5 @@
 ### Experiment Types/Approaches
-- Final Conv and FC classification Layers (learnable) with Siamese and Triplet Architectures.
+- Final Conv and FC classification Layers (learnable) with Siamese and Triplet Architectures. {*Done*}
 - Concating LPIPS_like features extracted from [low, mid and higher] layers with Final Classifier {_*Next Step*_}
 
 ### Modules and Classes init
@@ -18,17 +18,14 @@
     - Triplet Loss
 - train
     -main
-        epoch 
-        train
-        test
 - infer {_*Next Step*_}
-        
+- Embeddings Generator and Projection {_*Next Step*_}
 
 ### Hyperparameters
-- Learning Rate = [.01, .001, .0001]
-- Batch Size = [10, 25, 100]
+- Learning Rate = [.1, .01]
+- Batch Size = [5, 10, 15, 20, 25, 30]
 - Model = ['siameseNet', 'tripletNet']
 - Network = ['sqe','alex', 'resnet']
 - ~lpips_like = [True, False] {_*Next Step*_}
-- Contrastive and Triplet Losses Margin = [0.5, 1., 1.5]
+- ~~Contrastive and Triplet Losses Margin = [0.5, 1., 1.5]~~
 
