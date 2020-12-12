@@ -35,6 +35,7 @@ from losses import ContrastiveLoss, TripletLoss
 logs_filename = 'results.log'
 logging.basicConfig(filename=logs_filename, level= logging.DEBUG,
                     format='%(asctime)s:%(levelname)s:%(message)s')
+
 ##########################################################################################
 #Tensorboard runs hosted here : https://tensorboard.dev/experiment/XaWjqJX0Sgamt37dAsrTMg
 ##########################################################################################
@@ -160,8 +161,8 @@ def main():
             train_loss = 0
             optimizer = optim.SGD([
                 # {'params':model.embedding_net.parameters()},
-                {'params':model.embedding_net.conv_block.parameters(),'lr':run.lr},
-                {'params':model.embedding_net.Final_FC.parameters(),'lr':run.lr * 0.01}], lr= run.lr, momentum=0.9, weight_decay=0.0001)
+                {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
+                {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr * 0.01}], lr= run.lr, momentum=0.9, weight_decay=0.0001)
             for batch_idx, data in enumerate(trainLoader):
                 img1 = data[0][0].to(device)
                 img2 = data[0][1].to(device)
