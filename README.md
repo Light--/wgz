@@ -6,8 +6,9 @@
 - network
     - AlexEmbNet
     - ResnetEmbNet
-    - SQEEmbNet
-    <!-- - ResNextEmbNet -->
+    - SQEEmbNet.
+    - EfficientNet / det
+    - ResNextEmbNet
     - SiameseNet
     - TripletNet
 - custom datasets
