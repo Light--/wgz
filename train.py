@@ -18,8 +18,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 
-from custom_datasets import siameseDataset,tripletDataset, datasetGen
-from network import VGGEmbNet
+from custom_datasets import siameseDataset, tripletDataset, datasetGen
+from network import VGGEmbNet, SiameseNet, TripletNet, AlexEmbNet, SQEEmbNet, ResnetEmbNet, EffNetEmbNet
 
 # from pytorch_metric_learning import losses as losses
 # from pytorch_metric_learning import miners
@@ -28,7 +28,7 @@ from network import VGGEmbNet
 import PIL
 from PIL import Image
 
-from network import ResnetEmbNet, AlexEmbNet, SQEEmbNet, VGGEmbNet, SiameseNet, TripletNet
+from network import ResnetEmbNet,AlexEmbNet, SQEEmbNet, VGGEmbNet, SiameseNet, TripletNet
 from losses import ContrastiveLoss, TripletLoss
 
 
@@ -41,10 +41,11 @@ logging.basicConfig(filename=logs_filename, level= logging.DEBUG,
 ##########################################################################################
 
 params = OrderedDict(
-    batch_size = [5,10,15,20,25],
-    network = ['resnet', 'alex', 'sqe'],
+    batch_size = [5,10,15],
+    network = ['eff-b0','resnet','alex','sqe'],
     model = ['tripletNet','siameseNet'],
-    lr = [.1, .01],
+    lr = [.5,0.1,0.05,0.01],
+    margin = [0.2,0.5,1.]
     # lpips_like = [True, False], ####### NEXT STEP ######
 )
 
@@ -102,10 +103,10 @@ class RunManager():
         self.tb.add_scalar('Train Loss:', trainLoss, self.epoch_number)
         self.tb.add_scalar('Test Loss:', testLoss, self.epoch_number)
 
-        for name, param in self.network.conv_block.named_parameters():
-            self.tb.add_histogram(name, param, self.epoch_number)
-        for name, param in self.network.Final_FC.named_parameters():
-            self.tb.add_histogram(name, param, self.epoch_number)
+        # for name, param in self.network.conv_block.named_parameters():
+        #     self.tb.add_histogram(name, param, self.epoch_number)
+        # for name, param in self.network.Final_FC.named_parameters():
+        #     self.tb.add_histogram(name, param, self.epoch_number)
 
         results = OrderedDict()
         results['run'] = self.run_number
@@ -140,8 +141,16 @@ def main():
             embedding_net = AlexEmbNet()
         elif run.network == 'resnet':
             embedding_net = ResnetEmbNet()
-        embedding_net = embedding_net.to(device)
+        elif run.network == 'eff-b0':
+            embedding_net = EffNetEmbNet()
+        # elif run.network == 'eff-b1':
+        #     embedding_net = EfficientNet.from_pretrained('efficientnet-b1')
+        # elif run.network == 'eff-b2':
+        #     embedding_net = EfficientNet.from_pretrained('efficientnet-b2')
+        # elif run.network == 'eff-b3':
+        #     embedding_net = EfficientNet.from_pretrained('efficientnet-b3')
 
+        embedding_net = embedding_net.to(device)
         if run.model == 'siameseNet':
             model = SiameseNet(embedding_net)
             Dset = siameseDataset()
@@ -159,22 +168,24 @@ def main():
         def train_epoch(trainLoader):
             model.train()
             train_loss = 0
-            optimizer = optim.SGD([
-                # {'params':model.embedding_net.parameters()},
-                {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
-                {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr * 0.01}], lr= run.lr, momentum=0.9, weight_decay=0.0001)
+            optimizer = optim.Adam([
+                {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
+                # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
+                {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr * 0.01}
+                ], 
+                lr= run.lr,  weight_decay=0.0001)
             for batch_idx, data in enumerate(trainLoader):
                 img1 = data[0][0].to(device)
                 img2 = data[0][1].to(device)
                 if run.model == 'siameseNet':
                     target = data[1].to(device)
-                    preds = model(img1,img2)
+                    preds = model(img1, img2)
                     constLoss = ContrastiveLoss(1.)
                     loss_output = constLoss(preds[0],preds[1],target)
                 elif run.model == 'tripletNet':
                     img3 = data[0][2].to(device)
                     preds = model(img1,img2,img3)
-                    tripLoss = TripletLoss(1.)
+                    tripLoss = TripletLoss(run.margin)
                     loss_output = tripLoss(preds[0],preds[1],preds[2])
                 train_loss += loss_output
                 optimizer.zero_grad()

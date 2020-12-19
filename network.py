@@ -6,6 +6,7 @@ import torchvision as tv
 import torchvision.models as models
 
 from collections import namedtuple, OrderedDict
+from efficientnet_pytorch import EfficientNet
 
 class VGGEmbNet(nn.Module):
     def __init__(self):
@@ -178,6 +179,33 @@ class SQEEmbNet(nn.Module):
         out = self.Final_FC(h_conv)
         return out
 
+class EffNetEmbNet(nn.Module):
+    def __init__(self):
+        super(EffNetEmbNet,self).__init__()
+        self.preNet = EfficientNet.from_pretrained('efficientnet-b0')
+        for param in self.preNet.parameters():
+            param.requires_grad = False
+        self.Final_FC = nn.Sequential(
+            nn.Linear(1280,512),
+            nn.ReLU(),
+            nn.Linear(512,256),
+            nn.ReLU(),
+            nn.Linear(256,64),
+            nn.ReLU(),
+            nn.Linear(64,32),
+            # nn.Softmax(dim=1)
+        )
+
+        self.sig = nn.Sigmoid()
+        self.adptavg = nn.AdaptiveAvgPool2d(1)
+    def forward(self,x):
+        h = self.preNet.extract_features(x)
+        # h = self.sig(h)
+        h = self.adptavg(h)
+        h = h.reshape(-1,1280)
+        out = self.sig(self.Final_FC(h))
+        return out
+
 class ResnetEmbNet(nn.Module):
     def __init__(self):
         super(ResnetEmbNet,self).__init__()
@@ -206,6 +234,7 @@ class ResnetEmbNet(nn.Module):
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(1),
             )
+        self.sig = nn.Sigmoid()
         self.Final_FC = nn.Sequential(
             nn.Linear(1024, 256),
             nn.ReLU(),

@@ -7,7 +7,7 @@
     - AlexEmbNet
     - ResnetEmbNet
     - SQEEmbNet.
-    - EfficientNet / det
+    - EfficientNet/det
     - ResNextEmbNet
     - SiameseNet
     - TripletNet
