@@ -57,13 +57,13 @@ class VGGEmbNet(nn.Module):
 class AlexEmbNet(nn.Module):
     def __init__(self):
         super(AlexEmbNet,self).__init__()
-        self.preNet = models.alexnet(True).features
+        self.pre_Net = models.alexnet(True).features
 
         #lpips like = False
-        self.alex = nn.Sequential()
+        self.preNet = nn.Sequential()
         for x in range(13):
-            self.alex.add_module(str(x), self.preNet[x])
-        for param in self.alex.parameters():
+            self.preNet.add_module(str(x), self.pre_Net[x])
+        for param in self.preNet.parameters():
             param.requires_grad = False
 
         #lpips like = True
@@ -102,7 +102,7 @@ class AlexEmbNet(nn.Module):
         )
 
     def forward(self,x):
-        h = self.alex(x)
+        h = self.preNet(x)
         h = self.conv_block(h)
         h = h.reshape(-1,256)
         h_out = self.Final_FC(h)
@@ -112,13 +112,13 @@ class AlexEmbNet(nn.Module):
 class SQEEmbNet(nn.Module):
     def __init__(self):
         super(SQEEmbNet,self).__init__()
-        self.preNet = models.squeezenet1_1(pretrained=True).features
+        self.pre_Net = models.squeezenet1_1(pretrained=True).features
 
         # lpips like = False
-        self.sqe = nn.Sequential()
+        self.preNet = nn.Sequential()
         for x in range(13):
-            self.sqe.add_module(str(x), self.preNet[x])
-        for param in self.sqe.parameters():
+            self.preNet.add_module(str(x), self.pre_Net[x])
+        for param in self.preNet.parameters():
             param.requires_grad = False
 
         #lpips like = True
@@ -173,7 +173,7 @@ class SQEEmbNet(nn.Module):
         # h = self.slice7(h)
 
         #lpips like False
-        h = self.sqe(x)
+        h = self.preNet(x)
         h_conv = self.conv_block(h)
         h_conv = h_conv.reshape(-1,512)
         out = self.Final_FC(h_conv)
@@ -190,7 +190,9 @@ class EffNetEmbNet(nn.Module):
             nn.ReLU(),
             nn.Linear(512,256),
             nn.ReLU(),
-            nn.Linear(256,64),
+            nn.Linear(256,128),
+            nn.ReLU(),
+            nn.Linear(128,64),
             nn.ReLU(),
             nn.Linear(64,32),
             # nn.Softmax(dim=1)
@@ -209,15 +211,15 @@ class EffNetEmbNet(nn.Module):
 class ResnetEmbNet(nn.Module):
     def __init__(self):
         super(ResnetEmbNet,self).__init__()
-        self.resnet = models.resnet50(pretrained=True)
-        self.conv1 = self.resnet.conv1
-        self.bn1 = self.resnet.bn1
-        self.relu = self.resnet.relu
-        self.maxpool = self.resnet.maxpool
-        self.layer1 = self.resnet.layer1
-        self.layer2 = self.resnet.layer2
-        self.layer3 = self.resnet.layer3
-        self.layer4 = self.resnet.layer4
+        self.preNet = models.resnet50(pretrained=True)
+        self.conv1 = self.preNet.conv1
+        self.bn1 = self.preNet.bn1
+        self.relu = self.preNet.relu
+        self.maxpool = self.preNet.maxpool
+        self.layer1 = self.preNet.layer1
+        self.layer2 = self.preNet.layer2
+        self.layer3 = self.preNet.layer3
+        self.layer4 = self.preNet.layer4
         for param in self.conv1.parameters():
             param.requires_grad = False
         for param in self.layer1.parameters():

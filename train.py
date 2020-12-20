@@ -17,6 +17,8 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
+import pandas as pd
+import json
 
 from custom_datasets import siameseDataset, tripletDataset, datasetGen
 from network import VGGEmbNet, SiameseNet, TripletNet, AlexEmbNet, SQEEmbNet, ResnetEmbNet, EffNetEmbNet
@@ -41,11 +43,13 @@ logging.basicConfig(filename=logs_filename, level= logging.DEBUG,
 ##########################################################################################
 
 params = OrderedDict(
-    batch_size = [5,10,15],
-    network = ['eff-b0','resnet','alex','sqe'],
+    shuffle = [True,False],
+    batch_size = [10,15],
     model = ['tripletNet','siameseNet'],
-    lr = [.5,0.1,0.05,0.01],
-    margin = [0.2,0.5,1.]
+    network = ['effB0','alex','resnet','sqe'],
+    margin = [0.2, 0.5],
+    opt = ['adam','sgd'],
+    lr = [0.1,0.01,0.001],
     # lpips_like = [True, False], ####### NEXT STEP ######
 )
 
@@ -103,11 +107,6 @@ class RunManager():
         self.tb.add_scalar('Train Loss:', trainLoss, self.epoch_number)
         self.tb.add_scalar('Test Loss:', testLoss, self.epoch_number)
 
-        # for name, param in self.network.conv_block.named_parameters():
-        #     self.tb.add_histogram(name, param, self.epoch_number)
-        # for name, param in self.network.Final_FC.named_parameters():
-        #     self.tb.add_histogram(name, param, self.epoch_number)
-
         results = OrderedDict()
         results['run'] = self.run_number
         results['epoch'] = self.epoch_number
@@ -127,8 +126,21 @@ class RunManager():
     def track_testLoss(self, test_Loss):
         self.epoch_testLoss = test_Loss # edittable
 
-    def save_model(self):
-        pass
+    def save_model(self,state):
+        print("Run Finished...\nSaving Model")
+        model_path = './models/'
+        model_name = '_'.join(str(v) for v in list(self.run_params))
+        model_name = model_name.replace('.','')
+        model_name += '.pth.tar'
+        modelname = os.path.join(model_path,model_name)
+        torch.save(state, modelname)
+        
+
+    def save_score(self):
+        pd.DataFrame.from_dict(self.run_data,orient='columns').to_csv(f'results.csv')
+
+        with open(f'results.json','w',encoding='utf-8') as f:
+            json.dump(self.run_data,f,ensure_ascii=False,indent=4)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -141,7 +153,7 @@ def main():
             embedding_net = AlexEmbNet()
         elif run.network == 'resnet':
             embedding_net = ResnetEmbNet()
-        elif run.network == 'eff-b0':
+        elif run.network == 'effB0':
             embedding_net = EffNetEmbNet()
         # elif run.network == 'eff-b1':
         #     embedding_net = EfficientNet.from_pretrained('efficientnet-b1')
@@ -156,31 +168,56 @@ def main():
             Dset = siameseDataset()
             train_set, test_set = torch.utils.data.random_split(Dset,[100,63])
             trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
-            testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle = True)
+            testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle = run.shuffle)
         elif run.model == 'tripletNet':
             model = TripletNet(embedding_net)
             Dset = tripletDataset()
             train_set, test_set = torch.utils.data.random_split(Dset,[120,43])
             trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
-            testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle = True)
+            testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle = run.shuffle)
         model = model.to(device)
         m.begin_run(run, embedding_net)
         def train_epoch(trainLoader):
             model.train()
             train_loss = 0
-            optimizer = optim.Adam([
-                {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
-                # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
-                {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr * 0.01}
-                ], 
-                lr= run.lr,  weight_decay=0.0001)
+            if run.opt == 'adam':
+                if run.network == 'effB0':
+                    optimizer = optim.Adam([
+                        # {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
+                        # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
+                        {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr}
+                        ], 
+                        lr= run.lr, weight_decay=0.0001)
+                else:                
+                    optimizer = optim.Adam([
+                        # {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
+                        {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr*0.01},
+                        {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr}
+                        ], 
+                        lr= run.lr, weight_decay=0.0001)
+            elif run.opt == 'sgd':
+                if run.network == 'effB0':
+                    optimizer = optim.SGD([
+                        # {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
+                        # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
+                        {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr}
+                        ], 
+                        lr= run.lr,momentum=0.9,weight_decay=0.0001)
+                else:                
+                    optimizer = optim.SGD([
+                        # {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
+                        {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr*0.01},
+                        {'params':model.embedding_net.Final_FC.parameters(), 'lr':run.lr}
+                        ], 
+                        lr= run.lr, momentum=0.9,weight_decay=0.0001)
+            # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min',factor=0.01,threshold=1e-4)
             for batch_idx, data in enumerate(trainLoader):
                 img1 = data[0][0].to(device)
                 img2 = data[0][1].to(device)
                 if run.model == 'siameseNet':
                     target = data[1].to(device)
                     preds = model(img1, img2)
-                    constLoss = ContrastiveLoss(1.)
+                    constLoss = ContrastiveLoss(run.margin)
                     loss_output = constLoss(preds[0],preds[1],target)
                 elif run.model == 'tripletNet':
                     img3 = data[0][2].to(device)
@@ -191,6 +228,7 @@ def main():
                 optimizer.zero_grad()
                 loss_output.backward()
                 optimizer.step()
+                # scheduler.step(loss_output)
             train_loss /= (batch_idx+1)
             return train_loss
         def test_epoch(testLoader):
@@ -203,12 +241,12 @@ def main():
                     if run.model == 'siameseNet':
                         target = data[1].to(device)
                         preds = model(img1,img2)
-                        constLoss = ContrastiveLoss(1.)
+                        constLoss = ContrastiveLoss(run.margin)
                         loss_output = constLoss(preds[0],preds[1],target)
                     elif run.model == 'tripletNet':
                         img3 = data[0][2].to(device)
                         preds = model(img1,img2,img3)
-                        tripLoss = TripletLoss(1.)
+                        tripLoss = TripletLoss(run.margin)
                         loss_output = tripLoss(preds[0],preds[1],preds[2])
                     test_loss += loss_output
                 test_loss /= (batch_idx+1)
@@ -219,7 +257,10 @@ def main():
             test_loss = test_epoch(testLoader)
             m.track_trainLoss(train_loss)
             m.track_testLoss(test_loss)
+            m.save_score()
             m.end_epoch()
+        checkpoint = {'state_dict':model.embedding_net.state_dict()}
+        m.save_model(checkpoint)
         m.end_run()
 
 if __name__ == "__main__":
