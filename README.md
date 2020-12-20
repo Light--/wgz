@@ -2,6 +2,10 @@
 - Final Conv and FC classification Layers (learnable) with Siamese and Triplet Architectures. {*Done*}
 - Concating LPIPS_like features extracted from [low, mid and higher] layers with Final Classifier {_*Next Step*_}
 
+### Tensorboard Experiment Links
+- *OLD* : https://tensorboard.dev/experiment/XaWjqJX0Sgamt37dAsrTMg
+- *NEW* : https://tensorboard.dev/experiment/CgW5mHnqQMqBjT9Imo6iZQ/
+
 ### Modules and Classes init
 - network
     - AlexEmbNet
