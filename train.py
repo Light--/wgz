@@ -40,6 +40,7 @@ logging.basicConfig(filename=logs_filename, level= logging.DEBUG,
 
 ##########################################################################################
 #Tensorboard runs hosted here : https://tensorboard.dev/experiment/XaWjqJX0Sgamt37dAsrTMg
+                        # NEW : https://tensorboard.dev/experiment/CgW5mHnqQMqBjT9Imo6iZQ/
 ##########################################################################################
 
 params = OrderedDict(
@@ -47,9 +48,9 @@ params = OrderedDict(
     batch_size = [10,15],
     model = ['tripletNet','siameseNet'],
     network = ['effB0','alex','resnet','sqe'],
-    margin = [0.2, 0.5],
+    margin = [0.2, 0.3],
     opt = ['adam','sgd'],
-    lr = [0.1,0.01,0.001],
+    lr = [ 0.01, 0.001,0.0001,0.00001],
     # lpips_like = [True, False], ####### NEXT STEP ######
 )
 
@@ -251,7 +252,7 @@ def main():
                     test_loss += loss_output
                 test_loss /= (batch_idx+1)
                 return test_loss
-        for epoch in range(20):
+        for epoch in range(30"""  """):
             m.begin_epoch()
             train_loss = train_epoch(trainLoader)
             test_loss = test_epoch(testLoader)

@@ -6,3 +6,8 @@ runs
 ./runs
 WGZ_Code.rar
 ./WGZ_Code.rar
+results.log
+results.csv
+results.json
+./old_runs
+old_runs
