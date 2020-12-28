@@ -8,9 +8,10 @@ import torchvision.models as models
 from collections import namedtuple, OrderedDict
 from efficientnet_pytorch import EfficientNet
 
+
 class VGGEmbNet(nn.Module):
     def __init__(self):
-        super(VGGEmbNet,self).__init__()
+        super(VGGEmbNet, self).__init__()
         self.preNet = models.vgg16(pretrained=True).features
         self.vgg = nn.Sequential()
         self.slice1 = nn.Sequential()
@@ -44,9 +45,12 @@ class VGGEmbNet(nn.Module):
         h_relu4_3 = h
         h = self.slice5(h)
         h_relu5_3 = h
-        vgg_outputs = namedtuple("VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3', 'relu5_3'])
+        vgg_outputs = namedtuple(
+            "VggOutputs", ["relu1_2", "relu2_2", "relu3_3", "relu4_3", "relu5_3"]
+        )
         out = vgg_outputs(h_relu1_2, h_relu2_2, h_relu3_3, h_relu4_3, h_relu5_3)
         return out
+
 
 # class ResNextEmbNet(nn.Module):
 #     def __init__(self):
@@ -54,19 +58,20 @@ class VGGEmbNet(nn.Module):
 #         self.preNet = models.resnext50_32x4d(True)
 #         self.resNext = nn.Sequential()
 
+
 class AlexEmbNet(nn.Module):
     def __init__(self):
-        super(AlexEmbNet,self).__init__()
+        super(AlexEmbNet, self).__init__()
         self.pre_Net = models.alexnet(True).features
 
-        #lpips like = False
+        # lpips like = False
         self.preNet = nn.Sequential()
         for x in range(13):
             self.preNet.add_module(str(x), self.pre_Net[x])
         for param in self.preNet.parameters():
             param.requires_grad = False
 
-        #lpips like = True
+        # lpips like = True
         # self.slice1 = nn.Sequential()
         # self.slice2 = nn.Sequential()
         # self.slice3 = nn.Sequential()
@@ -89,29 +94,29 @@ class AlexEmbNet(nn.Module):
 
         self.conv_block = nn.Sequential(
             nn.Dropout(0.25),
-            nn.Conv2d(256,256,1,1),
+            nn.Conv2d(256, 256, 1, 1),
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(1),
-            )
+        )
         self.Final_FC = nn.Sequential(
-            nn.Linear(256,128),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(128,64),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64,32),
+            nn.Linear(64, 32),
         )
 
-    def forward(self,x):
+    def forward(self, x):
         h = self.preNet(x)
         h = self.conv_block(h)
-        h = h.reshape(-1,256)
+        h = h.reshape(-1, 256)
         h_out = self.Final_FC(h)
         return h_out
 
 
 class SQEEmbNet(nn.Module):
     def __init__(self):
-        super(SQEEmbNet,self).__init__()
+        super(SQEEmbNet, self).__init__()
         self.pre_Net = models.squeezenet1_1(pretrained=True).features
 
         # lpips like = False
@@ -121,7 +126,7 @@ class SQEEmbNet(nn.Module):
         for param in self.preNet.parameters():
             param.requires_grad = False
 
-        #lpips like = True
+        # lpips like = True
         # self.slice1 = nn.Sequential()
         # self.slice2 = nn.Sequential()
         # self.slice3 = nn.Sequential()
@@ -148,21 +153,21 @@ class SQEEmbNet(nn.Module):
         #     param.requires_grad = False
         self.conv_block = nn.Sequential(
             nn.Dropout(0.25),
-            nn.Conv2d(512,512,1,1),
+            nn.Conv2d(512, 512, 1, 1),
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(1),
-            )
+        )
         self.Final_FC = nn.Sequential(
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(256,128),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(128,64),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64,32),
+            nn.Linear(64, 32),
         )
 
-    def forward(self,x):
+    def forward(self, x):
         # lpips like = True
         # h = self.slice1(x)
         # h = self.slice2(h)
@@ -172,45 +177,48 @@ class SQEEmbNet(nn.Module):
         # h = self.slice6(h)
         # h = self.slice7(h)
 
-        #lpips like False
+        # lpips like False
         h = self.preNet(x)
         h_conv = self.conv_block(h)
-        h_conv = h_conv.reshape(-1,512)
+        h_conv = h_conv.reshape(-1, 512)
         out = self.Final_FC(h_conv)
         return out
 
+
 class EffNetEmbNet(nn.Module):
     def __init__(self):
-        super(EffNetEmbNet,self).__init__()
-        self.preNet = EfficientNet.from_pretrained('efficientnet-b0')
+        super(EffNetEmbNet, self).__init__()
+        self.preNet = EfficientNet.from_pretrained("efficientnet-b3")
         for param in self.preNet.parameters():
             param.requires_grad = False
         self.Final_FC = nn.Sequential(
-            nn.Linear(1280,512),
+            nn.Linear(1536, 512),
             nn.ReLU(),
-            nn.Linear(512,256),
+            nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(256,128),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(128,64),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64,32),
+            nn.Linear(64, 32),
             # nn.Softmax(dim=1)
         )
 
         self.sig = nn.Sigmoid()
         self.adptavg = nn.AdaptiveAvgPool2d(1)
-    def forward(self,x):
+
+    def forward(self, x):
         h = self.preNet.extract_features(x)
         # h = self.sig(h)
         h = self.adptavg(h)
-        h = h.reshape(-1,1280)
-        out = self.sig(self.Final_FC(h))
+        h = h.reshape(-1, 1536)
+        out = self.Final_FC(h)
         return out
+
 
 class ResnetEmbNet(nn.Module):
     def __init__(self):
-        super(ResnetEmbNet,self).__init__()
+        super(ResnetEmbNet, self).__init__()
         self.preNet = models.resnet50(pretrained=True)
         self.conv1 = self.preNet.conv1
         self.bn1 = self.preNet.bn1
@@ -232,21 +240,22 @@ class ResnetEmbNet(nn.Module):
             param.requires_grad = False
         self.conv_block = nn.Sequential(
             nn.Dropout(0.25),
-            nn.Conv2d(2048,1024,1,1),
+            nn.Conv2d(2048, 1024, 1, 1),
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(1),
-            )
+        )
         self.sig = nn.Sigmoid()
         self.Final_FC = nn.Sequential(
             nn.Linear(1024, 256),
             nn.ReLU(),
-            nn.Linear(256,128),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(128,64),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64,32),
+            nn.Linear(64, 32),
         )
-    def forward(self,x):
+
+    def forward(self, x):
         h = self.conv1(x)
         h = self.bn1(h)
         h = self.relu(h)
@@ -260,24 +269,25 @@ class ResnetEmbNet(nn.Module):
         h_out = self.Final_FC(h_flat)
         return h_out
 
+
 class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
-        super(SiameseNet,self).__init__()
+        super(SiameseNet, self).__init__()
         self.embedding_net = embedding_net
 
-    def forward(self, x1,x2):
+    def forward(self, x1, x2):
         out1 = self.embedding_net(x1)
         out2 = self.embedding_net(x2)
         return out1, out2
 
+
 class TripletNet(nn.Module):
     def __init__(self, embedding_net):
-        super(TripletNet,self).__init__()
+        super(TripletNet, self).__init__()
         self.embedding_net = embedding_net
 
-    def forward(self,x1,x2,x3):
+    def forward(self, x1, x2, x3):
         out1 = self.embedding_net(x1)
         out2 = self.embedding_net(x2)
         out3 = self.embedding_net(x3)
         return out1, out2, out3
-

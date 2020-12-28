@@ -1,6 +1,7 @@
 ### Experiment Types/Approaches
 - Final Conv and FC classification Layers (learnable) with Siamese and Triplet Architectures. {*Done*}
 - Concating LPIPS_like features extracted from [low, mid and higher] layers with Final Classifier {_*Next Step*_}
+- Lottery Ticket Hyporthesis on pretrained net for computer vision tasks. {_*Next Step*_}
 
 ### Tensorboard Experiment Links
 - *OLD* : https://tensorboard.dev/experiment/XaWjqJX0Sgamt37dAsrTMg
@@ -12,7 +13,7 @@
     - ResnetEmbNet
     - SQEEmbNet.
     - EfficientNet/det
-    - ResNextEmbNet
+    - ~~ResNextEmbNet~~
     - SiameseNet
     - TripletNet
 - custom datasets
@@ -27,10 +28,10 @@
 - Embeddings Generator and Projection {_*Next Step*_}
 
 ### Hyperparameters
-- Learning Rate = [.1, .01]
-- Batch Size = [5, 10, 15, 20, 25, 30]
+- Learning Rate = [.01, .001, .0001]
+- Batch Size = [ 10]
+- Contrastive and Triplet Losses Margin = [~~0.2, 0.3,~~ 1.]
 - Model = ['siameseNet', 'tripletNet']
-- Network = ['sqe','alex', 'resnet']
+- Network = ['sqe', 'alex', 'resnet', 'effB0']
 - ~lpips_like = [True, False] {_*Next Step*_}
-- ~~Contrastive and Triplet Losses Margin = [0.5, 1., 1.5]~~
 
