@@ -29,7 +29,8 @@ from network import (
     AlexEmbNet,
     SQEEmbNet,
     ResnetEmbNet,
-    EffNetEmbNet,
+    EffNetB0EmbNet,
+    EffNetB3EmbNet,
 )
 
 # from pytorch_metric_learning import losses as losses
@@ -39,14 +40,6 @@ from network import (
 import PIL
 from PIL import Image
 
-from network import (
-    ResnetEmbNet,
-    AlexEmbNet,
-    SQEEmbNet,
-    VGGEmbNet,
-    SiameseNet,
-    TripletNet,
-)
 from losses import ContrastiveLoss, TripletLoss
 
 
@@ -64,11 +57,11 @@ logging.basicConfig(
 
 params = OrderedDict(
     batch_size=[10],
-    model=["tripletNet"],  # , "siameseNet"],  # Best: To be determined
-    network=["effB0", "effB3"],  # , "alex", "resnet", "sqe"],  # Best: effB0
+    model=[ "tripletNet","siameseNet"],  # Best: To be determined
+    network=["effB3", "alex", "sqe", "resnet","effB0", ],  # Best: effB0 
     margin=[1.0],  # Best: 1.
     opt=["adam"],  # Best: Adam
-    lr=[0.01, 0.001],  # Best: 0.001
+    lr=[0.0001],  # Best: 0.001
     # lpips_like = [True, False], ####### NEXT STEP ######
 )
 
@@ -180,13 +173,13 @@ def main():
         elif run.network == "resnet":
             embedding_net = ResnetEmbNet()
         elif run.network == "effB0":
-            embedding_net = EffNetEmbNet()
+            embedding_net = EffNetB0EmbNet()
         # elif run.network == 'eff-b1':
         #     embedding_net = EfficientNet.from_pretrained('efficientnet-b1')
         # elif run.network == 'eff-b2':
         #     embedding_net = EfficientNet.from_pretrained('efficientnet-b2')
         elif run.network == "effB3":
-            embedding_net = EffNetEmbNet()
+            embedding_net = EffNetB3EmbNet()
 
         embedding_net = embedding_net.to(device)
         if run.model == "siameseNet":
@@ -208,13 +201,13 @@ def main():
             model.train()
             train_loss = 0
             if run.opt == "adam":
-                if run.network == "effB0":
+                if run.network ==  'effB0' or "effB3":
                     optimizer = optim.Adam(
                         [
-                            {
-                                "params": model.embedding_net.preNet.parameters(),
-                                "lr": run.lr,
-                            },
+                            # {
+                            #     "params": model.embedding_net.preNet.parameters(),
+                            #     "lr": run.lr,
+                            # },
                             # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
                             {
                                 "params": model.embedding_net.Final_FC.parameters(),
@@ -240,41 +233,41 @@ def main():
                         lr=run.lr,
                         weight_decay=0.0001,
                     )
-            elif run.opt == "sgd":
-                if run.network == "effB0":
-                    optimizer = optim.SGD(
-                        [
-                            {
-                                "params": model.embedding_net.preNet.parameters(),
-                                "lr": run.lr,
-                            },
-                            # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
-                            {
-                                "params": model.embedding_net.Final_FC.parameters(),
-                                "lr": run.lr,
-                            },
-                        ],
-                        lr=run.lr,
-                        momentum=0.9,
-                        weight_decay=0.0001,
-                    )
-                else:
-                    optimizer = optim.SGD(
-                        [
-                            # {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
-                            {
-                                "params": model.embedding_net.conv_block.parameters(),
-                                "lr": run.lr * 0.01,
-                            },
-                            {
-                                "params": model.embedding_net.Final_FC.parameters(),
-                                "lr": run.lr,
-                            },
-                        ],
-                        lr=run.lr,
-                        momentum=0.9,
-                        weight_decay=0.0001,
-                    )
+            # elif run.opt == "sgd":
+            #     if run.network == "effB0":
+            #         optimizer = optim.SGD(
+            #             [
+            #                 {
+            #                     "params": model.embedding_net.preNet.parameters(),
+            #                     "lr": run.lr,
+            #                 },
+            #                 # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
+            #                 {
+            #                     "params": model.embedding_net.Final_FC.parameters(),
+            #                     "lr": run.lr,
+            #                 },
+            #             ],
+            #             lr=run.lr,
+            #             momentum=0.9,
+            #             weight_decay=0.0001,
+            #         )
+            #     else:
+            #         optimizer = optim.SGD(
+            #             [
+            #                 # {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
+            #                 {
+            #                     "params": model.embedding_net.conv_block.parameters(),
+            #                     "lr": run.lr * 0.01,
+            #                 },
+            #                 {
+            #                     "params": model.embedding_net.Final_FC.parameters(),
+            #                     "lr": run.lr,
+            #                 },
+            #             ],
+            #             lr=run.lr,
+            #             momentum=0.9,
+            #             weight_decay=0.0001,
+            #         )
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, "min", factor=0.01, threshold=1e-4
             )
@@ -333,11 +326,6 @@ def main():
         m.end_run()
 
 
-def load_models(modelname):
-    print("Loading Checkout/Saved Model...")
-    pass
-
-
 def embeddings_Gen():
     with torch.no_grad():
         m = RunManager()
@@ -347,29 +335,35 @@ def embeddings_Gen():
                     embedding_net = SQEEmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_tripletNet_sqe_10_adam_0001Final_Scheduler.pth.tar"
+                            "./final_models/trip_sqe_0001.pth.tar"
                         )["state_dict"]
                     )
                 elif run.network == "alex":
                     embedding_net = AlexEmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_tripletNet_alex_10_adam_0001Final_Scheduler.pth.tar"
+                            "./final_models/trip_alex_0001.pth.tar"
                         )["state_dict"]
                     )
                 elif run.network == "resnet":
                     embedding_net = ResnetEmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_tripletNet_resnet_10_adam_0001Final_Scheduler.pth.tar"
+                            "./final_models/trip_resnet_0001.pth.tar"
                         )["state_dict"]
                     )
                 elif run.network == "effB0":
-                    embedding_net = EffNetEmbNet()
-                    # embedding_net.load_state_dict(torch.load('./models/10_tripletNet_effB0_10_adam_0001Final_Scheduler.pth.tar')['state_dict'])
+                    embedding_net = EffNetB0EmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_tripletNet_effB0_10_adam_001OnlyEffB1.pth.tar"
+                            "./final_models/trip_effB0_0001.pth.tar"
+                        )["state_dict"]
+                    )
+                elif run.network == "effB3":
+                    embedding_net = EffNetB3EmbNet()
+                    embedding_net.load_state_dict(
+                        torch.load(
+                            "./final_models/trip_effB3_0001.pth.tar"
                         )["state_dict"]
                     )
             elif run.model == "siameseNet":
@@ -377,35 +371,42 @@ def embeddings_Gen():
                     embedding_net = SQEEmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_siameseNet_sqe_10_adam_0001Final_Scheduler.pth.tar"
+                            "./final_models/siam_sqe_00001.pth.tar"
                         )["state_dict"]
                     )
                 elif run.network == "alex":
                     embedding_net = AlexEmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_siameseNet_alex_10_adam_0001Final_Scheduler.pth.tar"
+                            "./final_models/siam_alex_00001.pth.tar"
                         )["state_dict"]
                     )
                 elif run.network == "resnet":
                     embedding_net = ResnetEmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_siameseNet_resnet_10_adam_0001Final_Scheduler.pth.tar"
+                            "./final_models/siam_resnet_00001.pth.tar"
                         )["state_dict"]
                     )
                 elif run.network == "effB0":
-                    embedding_net = EffNetEmbNet()
+                    embedding_net = EffNetB0EmbNet()
                     embedding_net.load_state_dict(
                         torch.load(
-                            "./models/10_siameseNet_effB0_10_adam_0001Final_Scheduler.pth.tar"
+                            "./final_models/siam_effB0_00001.pth.tar"
+                        )["state_dict"]
+                    )
+                elif run.network == "effB3":
+                    embedding_net = EffNetB3EmbNet()
+                    embedding_net.load_state_dict(
+                        torch.load(
+                            "./final_models/siam_effB3_00001.pth.tar"
                         )["state_dict"]
                     )
             embedding_net = embedding_net.to(device)
             Dset = datasetGen()
             data_loader = DataLoader(Dset, batch_size=len(Dset), shuffle=True)
             m.begin_run(run, embedding_net)
-            plt.figure(figsize=(10, 10))
+            plt.figure(figsize=(9, 9))
             batch = next(iter(data_loader))
             img_embs = []
             labels = []
@@ -421,7 +422,10 @@ def embeddings_Gen():
             m.end_run()
 
 
+def load_models(modelname):
+    print("Loading Checkout/Saved Model...")
+    pass
+
 if __name__ == "__main__":
     # main()
     embeddings_Gen()
-    pass

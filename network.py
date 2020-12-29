@@ -185,13 +185,42 @@ class SQEEmbNet(nn.Module):
         return out
 
 
-class EffNetEmbNet(nn.Module):
+class EffNetB0EmbNet(nn.Module):
     def __init__(self):
-        super(EffNetEmbNet, self).__init__()
+        super(EffNetB0EmbNet, self).__init__()
+        self.preNet = EfficientNet.from_pretrained("efficientnet-b0")
+        for param in self.preNet.parameters():
+            param.requires_grad = False
+        self.Final_FC = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(1280, 512),
+            nn.ReLU(),
+            nn.Linear(512, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            # nn.Softmax(dim=1)
+        )
+        self.adptavg = nn.AdaptiveAvgPool2d(1)
+
+    def forward(self, x):
+        h = self.preNet.extract_features(x)
+        # h = self.sig(h)
+        h = self.adptavg(h)
+        h = h.reshape(-1, 1280)
+        out = self.Final_FC(h)
+        return out
+
+
+class EffNetB3EmbNet(nn.Module):
+    def __init__(self):
+        super(EffNetB3EmbNet, self).__init__()
         self.preNet = EfficientNet.from_pretrained("efficientnet-b3")
         for param in self.preNet.parameters():
             param.requires_grad = False
         self.Final_FC = nn.Sequential(
+            nn.Dropout(0.5),
             nn.Linear(1536, 512),
             nn.ReLU(),
             nn.Linear(512, 256),
@@ -203,8 +232,6 @@ class EffNetEmbNet(nn.Module):
             nn.Linear(64, 32),
             # nn.Softmax(dim=1)
         )
-
-        self.sig = nn.Sigmoid()
         self.adptavg = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
