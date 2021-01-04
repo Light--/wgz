@@ -42,7 +42,6 @@ from PIL import Image
 
 from losses import ContrastiveLoss, TripletLoss
 
-
 logs_filename = "results.log"
 logging.basicConfig(
     filename=logs_filename,
@@ -57,11 +56,11 @@ logging.basicConfig(
 
 params = OrderedDict(
     batch_size=[10],
-    model=[ "tripletNet","siameseNet"],  # Best: To be determined
-    network=["effB3", "alex", "sqe", "resnet","effB0", ],  # Best: effB0 
+    model=[ "tripletNet", "siameseNet"],  # Best: To be determined
+    network=["alex", ],  # Best: effB0 "effB0",, "effB3", "resnet", "sqe"
     margin=[1.0],  # Best: 1.
     opt=["adam"],  # Best: Adam
-    lr=[0.0001],  # Best: 0.001
+    lr=[0.001],  # Best: , 0.0001
     # lpips_like = [True, False], ####### NEXT STEP ######
 )
 
@@ -146,10 +145,10 @@ class RunManager:
         model_path = "./models/"
         model_name = "_".join(str(v) for v in list(self.run_params))
         model_name = model_name.replace(".", "")
-        model_name += "_Final_Model"
+        model_name += "_Final_Model_999"
         model_name += ".pth.tar"
         modelname = os.path.join(model_path, model_name)
-        torch.save(state, modelname)
+        torch.save(state, modelname, _use_new_zipfile_serialization=False)
 
     def save_score(self):
         pd.DataFrame.from_dict(self.run_data, orient="columns").to_csv(
@@ -191,7 +190,7 @@ def main():
         elif run.model == "tripletNet":
             model = TripletNet(embedding_net)
             Dset = tripletDataset()
-            train_set, test_set = torch.utils.data.random_split(Dset, [120, 43])
+            train_set, test_set = torch.utils.data.random_split(Dset, [100, 63])
             trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
             testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle=True)
         model = model.to(device)
@@ -319,7 +318,7 @@ def main():
             test_loss = test_epoch(testLoader)
             m.track_trainLoss(train_loss)
             m.track_testLoss(test_loss)
-            m.save_score()
+            # m.save_score()
             m.end_epoch()
         checkpoint = {"state_dict": model.embedding_net.state_dict()}
         m.save_model(checkpoint)
@@ -429,3 +428,4 @@ def load_models(modelname):
 if __name__ == "__main__":
     # main()
     embeddings_Gen()
+    pass

@@ -23,5 +23,7 @@ _runs
 ./_runs
 final_models
 ./final_models
+_final_models
+./_final_models
 _data
 ./_data

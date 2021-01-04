@@ -192,7 +192,7 @@ class EffNetB0EmbNet(nn.Module):
         for param in self.preNet.parameters():
             param.requires_grad = False
         self.Final_FC = nn.Sequential(
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.Linear(1280, 512),
             nn.ReLU(),
             nn.Linear(512, 128),
