@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from torch.utils.data import DataLoader 
+from torch.utils.data import DataLoader
+
 
 def embeddings_Gen():
     with torch.no_grad():

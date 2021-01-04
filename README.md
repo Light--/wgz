@@ -12,7 +12,7 @@
 ## Inference with Trained Models:
 > python infer.py -h
 ```
-Inference through trained models using WGZ food images
+Inference through trained embedding models(SqueezeNet, Resnet50, EfficientNet B3, and AlexNet) using WGZ food images 
 optional arguments:
 -h, --help            show this help message and exit
 --p1 P1, --img1_path P1
@@ -27,15 +27,25 @@ optional arguments:
 ```
 
 ### Distance between two images
-- 
+Run "python infer.py" to infer with default images and embedding networks. _SQE_ with _Trip_ works best.
 
 ### Distance between images from two directories, Output: a .txt file
 - _To be Updated_
 
 ## Generate Embeddings from Trained Models of Food Images:
 The generated projections will be saved as part of a tensorboard runs, in tensorboard "runs" directory. 
-The argument/s to be passed is/are path to "dir" where the images are saved within class/label named sub directories. 
-
+The argument/s to be passed is/are path to "dir" where the images are saved within class/label named sub directories.
+```
+# _Dirs Structure_
+- data
+    - 1
+        - _____.jpg
+        - _____.jpg
+    - 2
+    - 3
+    ...
+    - n
+```
 ## Additional Info
 ### Experiment Types/Approaches
 - Final Conv and FC classification Layers (learnable) with Siamese and Triplet Architectures. {*Done*}

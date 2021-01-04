@@ -56,8 +56,10 @@ logging.basicConfig(
 
 params = OrderedDict(
     batch_size=[10],
-    model=[ "tripletNet", "siameseNet"],  # Best: To be determined
-    network=["alex", ],  # Best: effB0 "effB0",, "effB3", "resnet", "sqe"
+    model=["tripletNet", "siameseNet"],  # Best: To be determined
+    network=[
+        "alex",
+    ],  # Best: effB0 "effB0",, "effB3", "resnet", "sqe"
     margin=[1.0],  # Best: 1.
     opt=["adam"],  # Best: Adam
     lr=[0.001],  # Best: , 0.0001
@@ -200,7 +202,7 @@ def main():
             model.train()
             train_loss = 0
             if run.opt == "adam":
-                if run.network ==  'effB0' or "effB3":
+                if run.network == "effB0" or "effB3":
                     optimizer = optim.Adam(
                         [
                             # {
@@ -333,73 +335,71 @@ def embeddings_Gen():
                 if run.network == "sqe":
                     embedding_net = SQEEmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/trip_sqe_0001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/trip_sqe_0001.pth.tar")["state_dict"]
                     )
                 elif run.network == "alex":
                     embedding_net = AlexEmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/trip_alex_0001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/trip_alex_0001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
                 elif run.network == "resnet":
                     embedding_net = ResnetEmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/trip_resnet_0001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/trip_resnet_0001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
                 elif run.network == "effB0":
                     embedding_net = EffNetB0EmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/trip_effB0_0001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/trip_effB0_0001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
                 elif run.network == "effB3":
                     embedding_net = EffNetB3EmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/trip_effB3_0001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/trip_effB3_0001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
             elif run.model == "siameseNet":
                 if run.network == "sqe":
                     embedding_net = SQEEmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/siam_sqe_00001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/siam_sqe_00001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
                 elif run.network == "alex":
                     embedding_net = AlexEmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/siam_alex_00001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/siam_alex_00001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
                 elif run.network == "resnet":
                     embedding_net = ResnetEmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/siam_resnet_00001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/siam_resnet_00001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
                 elif run.network == "effB0":
                     embedding_net = EffNetB0EmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/siam_effB0_00001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/siam_effB0_00001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
                 elif run.network == "effB3":
                     embedding_net = EffNetB3EmbNet()
                     embedding_net.load_state_dict(
-                        torch.load(
-                            "./final_models/siam_effB3_00001.pth.tar"
-                        )["state_dict"]
+                        torch.load("./final_models/siam_effB3_00001.pth.tar")[
+                            "state_dict"
+                        ]
                     )
             embedding_net = embedding_net.to(device)
             Dset = datasetGen()
@@ -424,6 +424,7 @@ def embeddings_Gen():
 def load_models(modelname):
     print("Loading Checkout/Saved Model...")
     pass
+
 
 if __name__ == "__main__":
     # main()
