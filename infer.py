@@ -28,7 +28,7 @@ import argparse
 import PIL
 from PIL import Image
 
-from pytorch_metric_learning.distances import *
+# from pytorch_metric_learning.distances import *
 
 # Declare
 img1_path = ""

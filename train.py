@@ -160,6 +160,8 @@ class RunManager:
         with open(f"Final_results.json", "w", encoding="utf-8") as f:
             json.dump(self.run_data, f, ensure_ascii=False, indent=4)
 
+    def save_embs_runs(self, run):
+        self.tb = SummaryWriter(comment=f"-{run}")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -175,10 +177,6 @@ def main():
             embedding_net = ResnetEmbNet()
         elif run.network == "effB0":
             embedding_net = EffNetB0EmbNet()
-        # elif run.network == 'eff-b1':
-        #     embedding_net = EfficientNet.from_pretrained('efficientnet-b1')
-        # elif run.network == 'eff-b2':
-        #     embedding_net = EfficientNet.from_pretrained('efficientnet-b2')
         elif run.network == "effB3":
             embedding_net = EffNetB3EmbNet()
 

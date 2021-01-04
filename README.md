@@ -33,8 +33,11 @@ Run "python infer.py" to infer with default images and embedding networks. _SQE_
 - _To be Updated_
 
 ## Generate Embeddings from Trained Models of Food Images:
-The generated projections will be saved as part of a tensorboard runs, in tensorboard "runs" directory. 
-The argument/s to be passed is/are path to "dir" where the images are saved within class/label named sub directories.
+- Three steps to generate embeddings
+    - Have a 'data' dir with images in it, classified within classes/labels sub-directory. Shown Below.
+    - Generate images Json files using "JsonGen.py", saved in JSONFiles dir.
+    - Run "embGen.py"
+- The generated projections will be saved as part of a tensorboard runs, in tensorboard "runs" directory. 
 ```
 # _Dirs Structure_
 - data
