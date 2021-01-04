@@ -12,20 +12,20 @@
 ## Inference with Trained Models:
 > python infer.py -h
     """
-    usage: infer.py [-h] [--p1 P1] [--p2 P2] [--emb EMB] [--m M] [--use_gpu]
-    Inference through trained models using WGZ food images
-    optional arguments:
-    -h, --help            show this help message and exit
-    --p1 P1, --img1_path P1
-                            Enter path to Image 1
-    --p2 P2, --img2_path P2
-                            Enter path to Image 2
-    --emb EMB, --embnet EMB
-                            Preferred type of trained emdeddings generator neural network. Default: SqueezeNet[sqe]. Options: [alex,sqe,effB3,resnet]      
-    --m M, --model M      Preferred model/architecture on which the chosen embedding network has been trained on. Default: Triplet[trip]. Options:       
-                            [trip,siam]
-    --use_gpu             turn on flag to use GPU
+        Inference through trained models using WGZ food images
+        optional arguments:
+        -h, --help            show this help message and exit
+        --p1 P1, --img1_path P1
+                                Enter path to Image 1. Default: ex_imgs/a1.jpg
+        --p2 P2, --img2_path P2
+                                Enter path to Image 2. Default: ex_imgs/b1.jpg
+        --emb EMB, --embnet EMB
+                                Preferred type of trained emdeddings generator neural network. Default: SqueezeNet[sqe]. Options: [alex,sqe,effB3,resnet]      
+        --m M, --model M      Preferred model/architecture on which the chosen embedding network has been trained on. Default: Triplet[trip]. Options:       
+                                [trip,siam]
+        --use_gpu             turn on flag to use GPU
     """
+
 ### Distance between two images
 - 
 
@@ -33,7 +33,8 @@
 - _To be Updated_
 
 ## Generate Embeddings from Trained Models of Food Images:
-- 
+The generated projections will be saved as part of a tensorboard runs, in tensorboard "runs" directory. 
+The argument/s to be passed is/are path to "dir" where the images are saved within class/label named sub directories. 
 
 ## Additional Info
 ### Experiment Types/Approaches
