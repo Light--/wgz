@@ -11,20 +11,20 @@
 - Install all the packages from "Requirements.txt"
 ## Inference with Trained Models:
 > python infer.py -h
-    """
-        Inference through trained models using WGZ food images
-        optional arguments:
-        -h, --help            show this help message and exit
-        --p1 P1, --img1_path P1
-                                Enter path to Image 1. Default: ex_imgs/a1.jpg
-        --p2 P2, --img2_path P2
-                                Enter path to Image 2. Default: ex_imgs/b1.jpg
-        --emb EMB, --embnet EMB
-                                Preferred type of trained emdeddings generator neural network. Default: SqueezeNet[sqe]. Options: [alex,sqe,effB3,resnet]      
-        --m M, --model M      Preferred model/architecture on which the chosen embedding network has been trained on. Default: Triplet[trip]. Options:       
-                                [trip,siam]
-        --use_gpu             turn on flag to use GPU
-    """
+```
+Inference through trained models using WGZ food images
+optional arguments:
+-h, --help            show this help message and exit
+--p1 P1, --img1_path P1
+                        Enter path to Image 1. Default: ex_imgs/a1.jpg
+--p2 P2, --img2_path P2
+                        Enter path to Image 2. Default: ex_imgs/b1.jpg
+--emb EMB, --embnet EMB
+                        Preferred type of trained emdeddings generator neural network. Default: SqueezeNet[sqe]. Options: [alex,sqe,effB3,resnet]      
+--m M, --model M      Preferred model/architecture on which the chosen embedding network has been trained on. Default: Triplet[trip]. Options:       
+                        [trip,siam]
+--use_gpu             turn on flag to use GPU
+```
 
 ### Distance between two images
 - 
