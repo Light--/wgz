@@ -1,6 +1,5 @@
 -------
 ## Links
--------
 ### Tensorboard Experiment Links
 - *OLD* : https://tensorboard.dev/experiment/XaWjqJX0Sgamt37dAsrTMg
 - *NEW* : https://tensorboard.dev/experiment/CgW5mHnqQMqBjT9Imo6iZQ/
@@ -10,23 +9,17 @@
 
 
 - Install all the packages from "Requirements.txt"
---------
-## Inference, Trained Models:
---------
+## Inference with Trained Models:
 ### Distance between two images
 - 
 
 ### Distance between images from two directories, Output: a .txt file
 - _To be Updated_
 
---------
-## Generate Embeddings from Trained Models, Food Images:
---------
+## Generate Embeddings from Trained Models of Food Images:
 - 
 
-***
 ## Additional Info
-___
 ### Experiment Types/Approaches
 - Final Conv and FC classification Layers (learnable) with Siamese and Triplet Architectures. {*Done*}
 - Concating LPIPS_like features extracted from [low, mid and higher] layers with Final Classifier {_*Next Step*_}
