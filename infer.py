@@ -34,7 +34,7 @@ img1_path = ''
 img2_path = ''
 
 # Parser
-parser = argparse.ArgumentParser(description="..... Custom Description .....")
+parser = argparse.ArgumentParser(description="Inference through trained models using WGZ food images")
 parser.add_argument('--p1','--img1_path', type=str, default='a.jpg', help='Enter path to Image 1')
 parser.add_argument('--p2','--img2_path', type=str, default='b.jpg', help='Enter path to Image 2')
 parser.add_argument('--emb','--embnet', type=str, default='sqe', 
