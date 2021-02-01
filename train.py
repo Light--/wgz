@@ -40,7 +40,7 @@ from network import (
 import PIL
 from PIL import Image
 
-from losses import ContrastiveLoss, TripletLoss
+from losses import ContrastiveLoss, TripletLoss, ArcLoss
 
 logs_filename = "results.log"
 logging.basicConfig(
@@ -56,16 +56,15 @@ logging.basicConfig(
 
 params = OrderedDict(
     batch_size=[10],
-    model=["tripletNet", "siameseNet"],  # Best: To be determined
+    model=["arcfaceLoss"],  #"circleLoss","tripletNet", "siameseNet"# Best: To be determined
     network=[
-        "alex",
-    ],  # Best: effB0 "effB0",, "effB3", "resnet", "sqe"
+        "alex", "resnet", "sqe", "effB3"
+    ],  # Best: effB0 "effB0",, 
     margin=[1.0],  # Best: 1.
     opt=["adam"],  # Best: Adam
     lr=[0.001],  # Best: , 0.0001
     # lpips_like = [True, False], ####### NEXT STEP ######
 )
-
 
 class RunBuilder:
     @staticmethod
@@ -75,7 +74,6 @@ class RunBuilder:
         for v in product(*params.values()):
             runs.append(Run(*v))
         return runs
-
 
 class RunManager:
     def __init__(self):
@@ -147,7 +145,7 @@ class RunManager:
         model_path = "./models/"
         model_name = "_".join(str(v) for v in list(self.run_params))
         model_name = model_name.replace(".", "")
-        model_name += "_Final_Model_999"
+        model_name += "_Final_Model_99"
         model_name += ".pth.tar"
         modelname = os.path.join(model_path, model_name)
         torch.save(state, modelname, _use_new_zipfile_serialization=False)
@@ -193,6 +191,12 @@ def main():
             train_set, test_set = torch.utils.data.random_split(Dset, [100, 63])
             trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
             testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle=True)
+        elif run.model == "arcfaceLoss":
+            model = embedding_net
+            Dset = datasetGen()
+            train_set, test_set = torch.utils.data.random_split(Dset, [100, 63])
+            trainLoader = DataLoader(train_set, batch_size=run.batch_size, shuffle=True)
+            testLoader = DataLoader(test_set, batch_size=run.batch_size, shuffle=True)
         model = model.to(device)
         m.begin_run(run, embedding_net)
 
@@ -209,7 +213,7 @@ def main():
                             # },
                             # {'params':model.embedding_net.conv_block.parameters(), 'lr':run.lr},
                             {
-                                "params": model.embedding_net.Final_FC.parameters(),
+                                "params": model.Final_FC.parameters(),
                                 "lr": run.lr,
                             },
                         ],
@@ -221,11 +225,11 @@ def main():
                         [
                             # {'params':model.embedding_net.preNet.parameters(),'lr':run.lr},
                             {
-                                "params": model.embedding_net.conv_block.parameters(),
+                                "params": model.conv_block.parameters(),
                                 "lr": run.lr * 0.01,
                             },
                             {
-                                "params": model.embedding_net.Final_FC.parameters(),
+                                "params": model.Final_FC.parameters(),
                                 "lr": run.lr,
                             },
                         ],
@@ -271,8 +275,8 @@ def main():
                 optimizer, "min", factor=0.01, threshold=1e-4
             )
             for batch_idx, data in enumerate(trainLoader):
-                img1 = data[0][0].to(device)
-                img2 = data[0][1].to(device)
+                img = data[0].to(device)
+                # img2 = data[0][1].to(device)
                 if run.model == "siameseNet":
                     target = data[1].to(device)
                     preds = model(img1, img2)
@@ -283,6 +287,11 @@ def main():
                     preds = model(img1, img2, img3)
                     tripLoss = TripletLoss(run.margin)
                     loss_output = tripLoss(preds[0], preds[1], preds[2])
+                elif run.model == "arcfaceLoss":
+                    target = data[1]
+                    preds = model(img)
+                    criterion = ArcLoss()
+                    loss_output = criterion(preds, target)
                 train_loss += loss_output
                 optimizer.zero_grad()
                 loss_output.backward()
@@ -296,8 +305,8 @@ def main():
                 model.eval()
                 test_loss = 0
                 for batch_idx, data in enumerate(testLoader):
-                    img1 = data[0][0].to(device)
-                    img2 = data[0][1].to(device)
+                    img = data[0].to(device)
+                    # img2 = data[0][1].to(device)
                     if run.model == "siameseNet":
                         target = data[1].to(device)
                         preds = model(img1, img2)
@@ -308,6 +317,11 @@ def main():
                         preds = model(img1, img2, img3)
                         tripLoss = TripletLoss(run.margin)
                         loss_output = tripLoss(preds[0], preds[1], preds[2])
+                    elif run.model == "arcfaceLoss":
+                        target = data[1]
+                        preds = model(img)
+                        criterion = ArcLoss()
+                        loss_output = criterion(preds, target)
                     test_loss += loss_output
                 test_loss /= batch_idx + 1
                 return test_loss
@@ -320,7 +334,7 @@ def main():
             m.track_testLoss(test_loss)
             # m.save_score()
             m.end_epoch()
-        checkpoint = {"state_dict": model.embedding_net.state_dict()}
+        checkpoint = {"state_dict": model.state_dict()}
         m.save_model(checkpoint)
         m.end_run()
 
@@ -425,6 +439,6 @@ def load_models(modelname):
 
 
 if __name__ == "__main__":
-    # main()
-    embeddings_Gen()
+    main()
+    # embeddings_Gen()
     pass

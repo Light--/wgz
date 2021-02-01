@@ -42,7 +42,7 @@ from train import RunBuilder, RunManager
 
 params = OrderedDict(
     batch_size=[10],
-    model=["tripletNet", "siameseNet"],  # Best: To be determined
+    model=["arcface","circleloss"],  #"tripletNet", "siameseNet", # Best: To be determined
     network=["alex","effB3", "resnet", "sqe"],  # Best: effB0 "effB0",, 
     margin=[1.0],  # Best: 1.
     opt=["adam"],  # Best: Adam

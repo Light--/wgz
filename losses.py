@@ -2,6 +2,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
+import os
+
+import numpy as np
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ContrastiveLoss(nn.Module):
     def __init__(self, margin):
@@ -31,12 +36,35 @@ class TripletLoss(nn.Module):
         losses = F.relu((distance_positive - distance_negative) + self.margin)
         return losses.mean() if size_average else losses.sum()
 
+No_CLASSES = len(os.listdir("data"))
+No_EMBDIM = 32
+
 class ArcLoss(nn.Module):
     def __init__(self):
-        pass
+        super(ArcLoss, self).__init__()
+        self.angular_margin = 0.5
+        self.feature_scale = 16
+        
+        self.class_map = torch.nn.Parameter(torch.Tensor(No_CLASSES,No_EMBDIM)) #edit
+        stdv = 1. / np.sqrt(self.class_map.size(1))
+        self.class_map.data.uniform_(-stdv,stdv)
 
-    def forward(self):
-        pass
+    def forward(self, embs, labels):
+        bs, labels = len(embs), labels
+
+        class_map = torch.nn.functional.normalize(self.class_map,dim=1)
+        cos_similarity = embs.mm(class_map.T).clamp(min=1e-10, max=1-1e-10)
+
+        pick = torch.zeros([bs, No_CLASSES])#edit
+        pick[torch.arange(bs), labels-1] = 1
+        pick.byte()
+        original_target_logit = cos_similarity[pick]
+        theta = torch.acos(original_target_logit)
+        marginal_target_logit = torch.cos(theta+self.angular_margin)
+
+        class_pred = self.feature_scale * (cos_similarity+(marginal_target_logit-original_target_logit).unsqueeze(1))
+        loss = torch.nn.CrossEntropyLoss()(class_pred,labels)
+        return loss 
 
 class CircleLoss(nn.Module):
     def __init__(self):
@@ -46,8 +74,8 @@ class CircleLoss(nn.Module):
         pass
 
 
-################ ___Below Code subject to deletion soon___ ###############
-################# SAMPLE CIRCLELOSS 1 #####################
+# ############## ___Below Code subject to deletion soon___ ###############
+# ##################### SAMPLE CIRCLELOSS 1 #####################
 # class CircleLoss(nn.Module):
 #     def __init__(self, scale=32, margin=0.25, similarity='cos', **kwargs):
 #         super(CircleLoss, self).__init__()

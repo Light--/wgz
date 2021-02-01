@@ -33,7 +33,7 @@ class datasetGen(Dataset):
 
     def __getitem__(self, index):
         img = Image.open(self.img_path[index])
-        img_lbl = self.imgLbl_path[index]
+        img_lbl = int(self.imgLbl_path[index])
         img = self.transform(img)
         return img, img_lbl
 
