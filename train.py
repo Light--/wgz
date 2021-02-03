@@ -55,14 +55,15 @@ logging.basicConfig(
 ##########################################################################################
 
 params = OrderedDict(
-    batch_size=[10],
     model=["arcfaceLoss"],  #"circleLoss","tripletNet", "siameseNet"# Best: To be determined
     network=[
-        "alex", "resnet", "sqe", "effB3"
-    ],  # Best: effB0 "effB0",, 
-    margin=[1.0],  # Best: 1.
+         "resnet",
+    ],  #" "alex","sqe",  "effB0", "effB3"Best: effB0 ,
     opt=["adam"],  # Best: Adam
-    lr=[0.001],  # Best: , 0.0001
+    batch_size=[10],
+    margin=[0.5],  # Best: 1.
+    lr=[0.001] , # Best: , 0.0001
+    fs = [16.],
     # lpips_like = [True, False], ####### NEXT STEP ######
 )
 
@@ -145,7 +146,7 @@ class RunManager:
         model_path = "./models/"
         model_name = "_".join(str(v) for v in list(self.run_params))
         model_name = model_name.replace(".", "")
-        model_name += "_Final_Model_99"
+        model_name += "_Final"
         model_name += ".pth.tar"
         modelname = os.path.join(model_path, model_name)
         torch.save(state, modelname, _use_new_zipfile_serialization=False)
@@ -161,7 +162,8 @@ class RunManager:
     def save_embs_runs(self, run):
         self.tb = SummaryWriter(comment=f"-{run}")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 
 def main():
@@ -290,7 +292,7 @@ def main():
                 elif run.model == "arcfaceLoss":
                     target = data[1]
                     preds = model(img)
-                    criterion = ArcLoss()
+                    criterion = ArcLoss(run.margin,run.fs)
                     loss_output = criterion(preds, target)
                 train_loss += loss_output
                 optimizer.zero_grad()
@@ -320,7 +322,7 @@ def main():
                     elif run.model == "arcfaceLoss":
                         target = data[1]
                         preds = model(img)
-                        criterion = ArcLoss()
+                        criterion = ArcLoss(run.margin,run.fs)
                         loss_output = criterion(preds, target)
                     test_loss += loss_output
                 test_loss /= batch_idx + 1
@@ -413,6 +415,35 @@ def embeddings_Gen():
                             "state_dict"
                         ]
                     )
+            elif run.model == "arcfaceLoss":
+                if run.network == "sqe":
+                    embedding_net = SQEEmbNet()
+                    embedding_net.load_state_dict(
+                        torch.load("models/10_arcfaceLoss_sqe_10_adam_0001_Final_Model_99.pth.tar")[
+                            "state_dict"
+                        ]
+                    )
+                elif run.network == "alex":
+                    embedding_net = AlexEmbNet()
+                    embedding_net.load_state_dict(
+                        torch.load("models/10_arcfaceLoss_alex_10_adam_0001_Final_Model_99.pth.tar")[
+                            "state_dict"
+                        ]
+                    )
+                elif run.network == "resnet":
+                    embedding_net = ResnetEmbNet()
+                    embedding_net.load_state_dict(
+                        torch.load("models/10_arcfaceLoss_resnet_10_adam_0001_Final_Model_99.pth.tar")[
+                            "state_dict"
+                        ]
+                    )
+                elif run.network == "effB3":
+                    embedding_net = EffNetB3EmbNet()
+                    embedding_net.load_state_dict(
+                        torch.load("models/10_arcfaceLoss_effB3_10_adam_0001_Final_Model_99.pth.tar")[
+                            "state_dict"
+                        ]
+                    )
             embedding_net = embedding_net.to(device)
             Dset = datasetGen()
             data_loader = DataLoader(Dset, batch_size=len(Dset), shuffle=True)
@@ -440,5 +471,5 @@ def load_models(modelname):
 
 if __name__ == "__main__":
     main()
-    # embeddings_Gen()
+    embeddings_Gen()
     pass
